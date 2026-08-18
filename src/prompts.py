@@ -25,5 +25,7 @@ Regras OBRIGATÓRIAS:
 3. Utilize apenas comandos de leitura (SELECT). Não use DROP, INSERT, UPDATE, DELETE.
 4. Utilize a tabela com o nome exato 'vgsales'.
 5. Sempre garanta que os nomes das colunas correspondam exatamente ao schema fornecido."""),
-    ("human", "Pergunta do usuário: {pergunta}")
+    ("human", """Pergunta do usuário: {pergunta}
+
+{instrucao_correcao}""")
 ])

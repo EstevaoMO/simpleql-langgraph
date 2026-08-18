@@ -11,24 +11,36 @@ from src.prompts import PROMPT_GERACAO_SQL
 parser = StrOutputParser()
 
 def gerar_consulta_sql(estado: EstadoAnalise) -> dict:
-    """
-    Nó 1: Recebe a pergunta do usuário e gera a consulta SQL utilizando o modelo especialista.
-    """
     print("[Nó: Geração de SQL] Traduzindo pergunta para DuckDB...")
     
     pergunta_usuario = estado["pergunta"]
+    erro_anterior = estado.get("erro")
     
-    # Cadeia LCEL: Prompt -> LLM -> Saída Limpa (String)
+    tentativas = estado.get("tentativas_correcao", 0) # fallback para 0 se não existir
+    
+    # Contexto dinâmico de correção
+    if erro_anterior and tentativas > 0:
+        instrucao_correcao = f"ATENÇÃO: Sua tentativa anterior falhou com o seguinte erro do banco de dados:\n{erro_anterior}\nPor favor, corrija a sintaxe SQL."
+        print(f"    🔄 Tentativa de correção: {tentativas + 1}")
+    else:
+        instrucao_correcao = ""
+    
     modelo = instanciar_modelo_sql()
     cadeia = PROMPT_GERACAO_SQL | modelo | parser
     
-    resposta_bruta = cadeia.invoke({"pergunta": pergunta_usuario})
+    resposta_bruta = cadeia.invoke({
+        "pergunta": pergunta_usuario,
+        "instrucao_correcao": instrucao_correcao
+    })
     
-    # Tratamento de segurança para garantir que a resposta seja apenas a consulta SQL limpa
-    sql_limpo = resposta_bruta.replace("```sql", "").replace("```", "").strip()
-    print(f"    ↳ SQL Gerado: {sql_limpo}") # debug
-
-    return {"consulta_sql": sql_limpo}
+    sql_limpo = resposta_bruta.replace("```sql", "").replace("```", "").strip() # correção redundante para segurança, caso o modelo insira blocos de markdown
+    print(f"    ↳ SQL Gerado: {sql_limpo}")
+    
+    return {
+        "consulta_sql": sql_limpo,
+        "tentativas_correcao": tentativas + 1,
+        "erro": None
+    }
 
 def validar_consulta_sql(estado: EstadoAnalise) -> dict:
     """
