@@ -3,7 +3,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from modelos import instanciar_modelo_sql, instanciar_modelo_analista
+from src.modelos import instanciar_modelo_sql, instanciar_modelo_analista
 from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage
 from langchain_openai import ChatOpenAI
 
