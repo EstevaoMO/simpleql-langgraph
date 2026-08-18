@@ -48,3 +48,6 @@ python testes/teste_fluxo_completo.py
 
 ## Contribuições
 - Bug reports, melhorias de prompts e ajustes de segurança são bem-vindos. Abra uma issue ou um PR.
+
+## Base de dados
+- A base de dados utilizada para o projeto pode ser encontrada em: [https://www.kaggle.com/datasets/gregorut/videogamesales](https://www.kaggle.com/datasets/gregorut/videogamesales)
