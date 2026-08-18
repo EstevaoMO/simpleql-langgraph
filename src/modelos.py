@@ -11,10 +11,10 @@ CABECALHOS_OPENROUTER = {
     "X-Title": "SimplesQL"
 }
 
-def instanciar_modelo_sql(temp: float = 0.0) -> ChatOpenAI:
+def instanciar_modelo_sql(temp: float = 0.1) -> ChatOpenAI:
     """
     Retorna o modelo especializado em geração de código e SQL.
-    A temperatura padrão é 0.0 para garantir previsibilidade na sintaxe.
+    A temperatura padrão é 0.1 para garantir previsibilidade na sintaxe.
     """
     modelo_sql: ChatOpenAI = ChatOpenAI(
         model="cohere/north-mini-code:free", 
