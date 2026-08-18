@@ -1,6 +1,5 @@
 from langchain_core.prompts import ChatPromptTemplate
 
-# Prompt para o modelo de geração de código (SQL)
 PROMPT_GERACAO_SQL = ChatPromptTemplate.from_messages([
     ("system", """Você é um Engenheiro de Dados especialista em DuckDB.
 Sua única função é traduzir perguntas analíticas em queries SQL precisas.
@@ -28,4 +27,20 @@ Regras OBRIGATÓRIAS:
     ("human", """Pergunta do usuário: {pergunta}
 
 {instrucao_correcao}""")
+])
+
+PROMPT_ANALISE_DADOS = ChatPromptTemplate.from_messages([
+    ("system", """Você é um Analista de Dados experiente, objetivo e direto.
+Sua missão é responder à pergunta do usuário baseando-se ÚNICA E EXCLUSIVAMENTE nos dados fornecidos.
+
+Regras OBRIGATÓRIAS:
+1. NUNCA invente números, estatísticas, jogos ou informações que não estejam nos dados fornecidos.
+2. Seja conciso. Explique o resultado em 1 ou 2 parágrafos no máximo.
+3. Se a lista de dados estiver vazia, informe que não foram encontrados resultados para a consulta.
+4. Formate sua resposta em Markdown, utilizando negrito para destacar os números principais e nomes.
+5. NÃO inclua saudações ("Olá", "Aqui está a resposta"). Vá direto ao ponto."""),
+    ("human", """Pergunta do usuário: {pergunta}
+
+Dados retornados pelo banco de dados:
+{dados}""")
 ])

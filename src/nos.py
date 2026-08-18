@@ -3,9 +3,9 @@ import duckdb
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-from src.modelos import instanciar_modelo_sql
+from src.modelos import instanciar_modelo_sql, instanciar_modelo_analista
 from src.estado import EstadoAnalise
-from src.prompts import PROMPT_GERACAO_SQL
+from src.prompts import PROMPT_GERACAO_SQL, PROMPT_ANALISE_DADOS
 
 # Parser que garante que a saída seja sempre uma string limpa
 parser = StrOutputParser()
@@ -96,3 +96,47 @@ def executar_consulta_sql(estado: EstadoAnalise) -> dict:
         erro_msg = f"Erro na execução do banco de dados: {str(e)}"
         print(f"    🚨 {erro_msg}")
         return {"erro": erro_msg}
+
+def gerar_resposta_final(estado: EstadoAnalise) -> dict:
+    """
+    Nó 4: Interpreta os resultados do banco de dados e monta o relatório final auditável.
+    """
+    print("[Nó: Análise] Redigindo relatório final...")
+    
+    pergunta = estado["pergunta"]
+    dados_crus = estado.get("resultado_consulta", [])
+    sql_utilizado = estado.get("consulta_sql", "N/A")
+    erro = estado.get("erro")
+
+    # Mensagem caso ainda haja um erro no fluxo, mesmo após a execução do SQL
+    if erro:
+        relatorio_erro = f"**Não foi possível concluir a análise.**\n\nMotivo: {erro}"
+        return {"resposta_final": relatorio_erro}
+
+    modelo_analista = instanciar_modelo_analista()
+    
+    # Cadeia LCEL para a análise
+    cadeia_analise = PROMPT_ANALISE_DADOS | modelo_analista | parser
+    
+    texto_interpretacao = cadeia_analise.invoke({
+        "pergunta": pergunta,
+        "dados": str(dados_crus)
+    })
+        
+    relatorio_final = f"""### 📊 Análise
+        {texto_interpretacao}
+
+        ---
+        ### 🔎 Evidências e Transparência
+
+        **SQL Utilizado:**
+        ```sql
+        {sql_utilizado}
+        ```
+
+        **Amostra dos Dados Utilizados:**
+        {dados_crus[:5]}
+        """
+
+    print("✅ Relatório final gerado com sucesso.")
+    return {"resposta_final": relatorio_final}
