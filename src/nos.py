@@ -3,9 +3,26 @@ import duckdb
 import textwrap
 from langchain_core.output_parsers import StrOutputParser
 
-from src.modelos import instanciar_modelo_sql, instanciar_modelo_analista
+from src.modelos import instanciar_modelo_sql, instanciar_modelo_analista, instanciar_modelo_graficos
 from src.estado import EstadoAnalise
-from src.prompts import PROMPT_EXTRAIR_ENTIDADES, PROMPT_GERACAO_SQL, PROMPT_ANALISE_DADOS
+from src.prompts import PROMPT_EXTRAIR_ENTIDADES, PROMPT_GERACAO_SQL, PROMPT_ANALISE_DADOS, PROMPT_PLANEJAMENTO_GRAFICO
+
+from pydantic import BaseModel, Field
+from typing import Optional, List
+
+class ConfiguracaoGrafico(BaseModel):
+    """Schema para forçar a saída estruturada do modelo de visualização."""
+    tipo: Optional[str] = Field(
+        description="O tipo de gráfico: 'bar', 'line', 'scatter'. Deixe vazio se for um KPI isolado."
+    )
+    eixo_x: Optional[str] = Field(description="Nome exato da coluna para o eixo X")
+    eixo_y: Optional[str] = Field(description="Nome exato da coluna para o eixo Y")
+    justificativa: Optional[str] = Field(description="Justificativa breve da escolha visual")
+
+class PlanejamentoVisual(BaseModel):
+    graficos: List[ConfiguracaoGrafico] = Field(
+        description="Lista de gráficos a serem renderizados. Retorne uma lista vazia [] se for apenas um KPI."
+    )
 
 # Parser que garante que a saída seja sempre uma string limpa
 parser = StrOutputParser()
@@ -164,9 +181,41 @@ def executar_consulta_sql(estado: EstadoAnalise) -> dict:
         print(f"    🚨 {erro_msg}")
         return {"erro": erro_msg}
 
+def planejar_grafico(estado: EstadoAnalise) -> dict:
+    """
+    Nó 4: Analisa os dados retornados e decide a melhor visualização gráfica.
+    """
+    print("📊 [Nó: DataViz] Planejando estrutura visual...")
+    dados = estado.get("resultado_consulta", [])
+    
+    if not dados:
+        return {"config_grafico": []}
+        
+    colunas_disponiveis = list(dados[0].keys())
+    modelo_graficos = instanciar_modelo_graficos()
+    
+    modelo_estruturado = modelo_graficos.with_structured_output(PlanejamentoVisual)
+    cadeia_viz = PROMPT_PLANEJAMENTO_GRAFICO | modelo_estruturado
+    
+    try:
+        resultado = cadeia_viz.invoke({
+            "pergunta": estado["pergunta"],
+            "colunas": colunas_disponiveis,
+            "dados_crus": dados[:5]
+        })
+        
+        lista_graficos = [g.model_dump() for g in resultado.graficos if g.tipo]
+        
+        print(f"    ↳ {len(lista_graficos)} gráfico(s) planejado(s).")
+        return {"config_grafico": lista_graficos}
+        
+    except Exception as e:
+        print(f"    ⚠️ Falha ao estruturar os gráficos: {e}")
+        return {"config_grafico": []}
+
 def gerar_resposta_final(estado: EstadoAnalise) -> dict:
     """
-    Nó 4: Interpreta os resultados do banco de dados e monta o relatório final auditável.
+    Nó 5: Interpreta os resultados do banco de dados e monta o relatório final auditável.
     """
     print("[Nó: Análise] Redigindo relatório final...")
     

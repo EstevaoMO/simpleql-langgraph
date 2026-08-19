@@ -5,6 +5,7 @@ from src.nos import (
     gerar_consulta_sql,
     validar_consulta_sql,
     executar_consulta_sql,
+    planejar_grafico,
     gerar_resposta_final
 )
 
@@ -21,7 +22,7 @@ def rotear_apos_validacao(estado: EstadoAnalise) -> str:
     if estado.get("tentativas_correcao", 0) < LIMITE_TENTATIVAS:
         return "gerar_sql" # auto-correção
         
-    return "gerar_resposta" #segue para gerar o relatório de erro
+    return "gerar_resposta"
 
 def rotear_apos_execucao(estado: EstadoAnalise) -> str:
     """
@@ -33,7 +34,7 @@ def rotear_apos_execucao(estado: EstadoAnalise) -> str:
             return "gerar_sql"
         return "gerar_resposta"
         
-    return "gerar_resposta"
+    return "planejar_grafico"
 
 def compilar_grafo():
     """
@@ -45,12 +46,14 @@ def compilar_grafo():
     workflow.add_node("gerar_sql", gerar_consulta_sql)
     workflow.add_node("validar_sql", validar_consulta_sql)
     workflow.add_node("executar_sql", executar_consulta_sql)
+    workflow.add_node("planejar_grafico", planejar_grafico)
     workflow.add_node("gerar_resposta", gerar_resposta_final)
 
     workflow.set_entry_point("alinhar_entidades")
 
     workflow.add_edge("alinhar_entidades", "gerar_sql")
     workflow.add_edge("gerar_sql", "validar_sql")
+    workflow.add_edge("planejar_grafico", "gerar_resposta")
     workflow.add_edge("gerar_resposta", END)
 
     # Arestas condicionais

@@ -38,3 +38,17 @@ def instanciar_modelo_analista(temp: float = 0.2) -> ChatOpenAI:
         default_headers=CABECALHOS_OPENROUTER
     )
     return modelo_analista
+
+def instanciar_modelo_graficos(temp: float = 0.0) -> ChatOpenAI:
+    """
+    Retorna o modelo especializado em geração de gráficos a partir de texto e síntese.
+    A temperatura padrão é 0.0 para garantir previsibilidade na geração.
+    """
+    modelo_graficos: ChatOpenAI = ChatOpenAI(
+        model="google/gemma-4-26b-a4b-it:free",
+        openai_api_key=CHAVE_API,
+        openai_api_base=URL_BASE_OPENROUTER,
+        temperature=temp,
+        default_headers=CABECALHOS_OPENROUTER
+    )
+    return modelo_graficos

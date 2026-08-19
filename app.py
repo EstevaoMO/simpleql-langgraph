@@ -1,9 +1,6 @@
 import streamlit as st
 import pandas as pd
 import os
-import re
-import ast
-import json
 import time
 from src.grafo import agente_simplesql
 
@@ -100,6 +97,7 @@ MENSAGENS_POR_NO = {
     "validar_sql": "Validando a sintaxe da query gerada...",
     "executar_sql": "Executando a consulta no banco de dados...",
     "corrigir_sql": "Ajustando a query após um erro de execução...",
+    "planejar_grafico": "Planejando a visualização gráfica dos resultados...",
     "gerar_resposta": "Elaborando o relatório final com os resultados...",
 }
 
@@ -107,61 +105,47 @@ MENSAGEM_PADRAO_SEQUENCIA = [
     "🧠 Interpretando sua pergunta...",
     "🗂️ Planejando a consulta SQL...",
     "⚙️ Executando no banco de dados...",
+    "📊 Planejando visualização gráfica...",
     "✍️ Elaborando o relatório final...",
 ]
 
-# def formatar_amostras_de_dados(texto: str) -> str:
-#     """Garante que listas de dicionários sejam renderizadas como blocos JSON."""
-#     if not texto: return texto
-#     linhas = texto.split("\n")
-#     saida = []
-#     padrao = re.compile(r"^\[\s*\{.*\}\s*\]$")
+# FUnções para os gráficos e exibição de dados
+def renderizar_grafico_unico(config: dict, df: pd.DataFrame) -> None:
+    """Renderiza um único gráfico com base no dicionário de configuração, isolando os erros."""
+    tipo = config.get("tipo")
+    x = config.get("eixo_x")
+    y = config.get("eixo_y")
+    justificativa = config.get("justificativa")
 
-#     for linha in linhas:
-#         if padrao.match(linha.strip()):
-#             try:
-#                 dados = ast.literal_eval(linha.strip())
-#                 saida.append("```json\n" + json.dumps(dados, indent=2, ensure_ascii=False, default=str) + "\n```")
-#                 continue
-#             except:
-#                 pass
-#         saida.append(linha)
-#     return "\n".join(saida)
+    if not (tipo and x and y):
+        return
 
- 
-def limpar_indentacao_markdown(texto: str) -> str:
-    """
-    Remove espaços de indentação no início das linhas que fazem o Streamlit
-    (markdown) interpretar erroneamente trechos como bloco de código
-    (4+ espaços de indentação = code block em markdown).
- 
-    Isso normalmente acontece quando a string de resposta é montada dentro
-    de um bloco de código Python já indentado (ex: dentro de uma função),
-    preservando a indentação do próprio código-fonte.
-    """
-    if not texto:
-        return texto
- 
-    linhas = texto.split("\n")
-    dentro_de_bloco_codigo = False
-    linhas_limpas = []
- 
-    for linha in linhas:
-        marcador_fence = re.match(r"^\s*```", linha)
-        if marcador_fence:
-            dentro_de_bloco_codigo = not dentro_de_bloco_codigo
-            linhas_limpas.append(linha.strip())
-            continue
- 
-        if dentro_de_bloco_codigo:
-            # dentro de bloco de código real: só remove a indentação "externa"
-            linhas_limpas.append(linha.lstrip() if linha.strip() else linha)
-        else:
-            linhas_limpas.append(linha.lstrip())
- 
-    return "\n".join(linhas_limpas)
+    with st.container():
+        # st.caption(f"**Insight Visual:** {justificativa}")
+        try:
+            if tipo == "bar":
+                st.bar_chart(df, x=x, y=y)
+            elif tipo == "line":
+                st.line_chart(df, x=x, y=y)
+            elif tipo == "scatter":
+                st.scatter_chart(df, x=x, y=y)
+        except Exception as erro:
+            st.warning(f"Não foi possível renderizar o gráfico '{tipo}': {erro}")
+    
+    st.divider()
 
+def exibir_visualizacoes(configs_graficos: list, dados_crus: list) -> None:
+    """Gerencia a criação do DataFrame e itera sobre a lista de gráficos solicitados."""
+    if not configs_graficos or not dados_crus:
+        return
 
+    st.markdown("### 📈 Visualizações Sugeridas")
+    df_plot = pd.DataFrame(dados_crus)
+    
+    for config in configs_graficos:
+        renderizar_grafico_unico(config, df_plot)
+
+# Funções de executção
 def executar_agente_com_status(estado_inicial):
     """Executa o grafo do agente exibindo o progresso em tempo real."""
     resultado_final = None
@@ -184,6 +168,7 @@ def executar_agente_com_status(estado_inicial):
             status.update(label="Análise concluída!", state="complete")
     return resultado_final
 
+# Funções de rendereização das páginas
 def renderizar_inicio():
     st.markdown("""
         <div class="simplesql-hero">
@@ -198,11 +183,11 @@ def renderizar_inicio():
     if 'pergunta_atual' not in st.session_state:
         st.session_state.pergunta_atual = ""
 
-    if col1.button("🏆 10 jogos mais vendidos globalmente", use_container_width=True):
+    if col1.button("🏆 10 jogos mais vendidos globalmente", width="stretch"):
         st.session_state.pergunta_atual = "Quais foram os 10 jogos mais vendidos globalmente?"
-    if col2.button("🇯🇵 Gênero com maior venda no Japão", use_container_width=True):
+    if col2.button("🇯🇵 Gênero com maior venda no Japão", width="stretch"):
         st.session_state.pergunta_atual = "Qual gênero possui a maior média de vendas no Japão?"
-    if col3.button("⚔️ Comparar Action vs Sports", use_container_width=True):
+    if col3.button("⚔️ Comparar Action vs Sports", width="stretch"):
         st.session_state.pergunta_atual = "Como as vendas globais de jogos de ação se comparam às de jogos de esporte?"
 
     pergunta = st.text_input("Sua pergunta:", value=st.session_state.pergunta_atual, placeholder="Ex: Quais plataformas mais venderam na Europa?")
@@ -218,15 +203,22 @@ def renderizar_inicio():
                 "resposta_final": "",
                 "erro": None,
                 "tentativas_correcao": 0,
-                "dados_encontrados": True
+                "dados_encontrados": True,
+                "config_grafico": None
             }
             try:
                 resultado = executar_agente_com_status(estado_inicial)
                 
                 if resultado.get("dados_encontrados", True):
-                    st.markdown('<div class="simplesql-resposta">', unsafe_allow_html=True)
-                    st.markdown(resultado.get("resposta_final", ""))
-                    st.markdown('</div>', unsafe_allow_html=True)
+                    texto_relatorio = resultado.get("resposta_final", "")
+                    with st.container(border=True):
+                        st.markdown(texto_relatorio)
+                        
+                    # gráficos
+                    configs = resultado.get("config_grafico", [])
+                    dados = resultado.get("resultado_consulta", [])
+                    
+                    exibir_visualizacoes(configs, dados)
                 else:
                     st.info("**Nenhum dado encontrado**", icon="ℹ️")
                     st.markdown(f"> {resultado.get('resposta_final', '')}")
@@ -256,16 +248,16 @@ def renderizar_base():
         if "Genre" in df.columns:
             c3.metric("Gêneros únicos", df["Genre"].nunique())
         st.markdown("<br>", unsafe_allow_html=True)
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.dataframe(df, width="stretch", hide_index=True)
     else:
         st.error(f"Arquivo não encontrado em: {caminho_csv}. Verifique o diretório.")
 
 def main():
     with st.sidebar:
         if os.path.exists("logo.png"):
-            st.image("logo.png", use_container_width=True)
+            st.image("logo.png", width="stretch")
         else:
-            st.markdown("## 📊 SimplesQL")
+            st.markdown("## SimplesQL")
         
         st.markdown("---")
         pagina = st.radio("Navegação", ["Início", "Base de Dados"])
@@ -277,6 +269,7 @@ def main():
         renderizar_inicio()
     elif pagina == "Base de Dados":
         renderizar_base()
+
 
 if __name__ == "__main__":
     main()

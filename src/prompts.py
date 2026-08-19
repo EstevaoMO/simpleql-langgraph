@@ -6,6 +6,8 @@ Sua única função é identificar possíveis nomes de jogos, publicadoras ou pl
 REGRA VITAL: Se encontrar siglas ou abreviações famosas de jogos (ex: GTA, COD, WOW), expanda-as para o nome completo (ex: Grand Theft Auto, Call of Duty, World of Warcraft).
 
 Retorne APENAS uma lista separada por vírgulas. Se não houver, retorne vazio.
+
+OS EXEMPLOS A SEGUIR SÃO ILUSTRATIVOS, NÃO DEVEM SER RESPONDIDOS:
 Exemplo 1: "Qual vendeu mais, cod2 ou minecraft?" -> Call of Duty 2, Minecraft 
 Exemplo 2: "Quantos jogos a nintendo lançou?" -> nintendo
 Exemplo 3: "Qual a média de vendas globais?" -> """),
@@ -78,4 +80,34 @@ Regras OBRIGATÓRIAS:
 
 Dados retornados pelo banco de dados:
 {dados}""")
+])
+
+PROMPT_PLANEJAMENTO_GRAFICO = ChatPromptTemplate.from_messages([
+    ("system", """Você é um Especialista em Visualização de Dados e UI/UX.
+Sua única função é analisar uma amostra de dados extraída de um banco SQL e decidir a melhor forma de representá-la visualmente.
+
+Você DEVE retornar APENAS um objeto JSON válido, sem nenhum texto adicional ou blocos markdown.
+
+REGRAS DE DESIGN (Prioridade Máxima):
+1. KPI / Dado Único: Se os dados representarem apenas um número geral, uma média, um total, ou possuírem apenas 1 linha e 1 coluna de valor, NÃO FAÇA UM GRÁFICO. Retorne um JSON vazio: {{}}
+2. Temporal: Se houver uma coluna de Ano (Year) ou Data, escolha o tipo "line" (linha).
+3. Categórico vs Numérico: Se houver uma coluna de texto (ex: Name, Genre, Platform) e uma numérica (vendas), escolha "bar" (barras).
+4. Correlação: Se houverem duas colunas numéricas (ex: NA_Sales e EU_Sales) representando entidades diferentes, escolha "scatter" (dispersão).
+
+FORMATO DE SAÍDA ESPERADO:
+Se um gráfico for necessário, retorne estritamente neste formato:
+{{
+    "tipo": "bar" | "line" | "scatter",
+    "eixo_x": "nome_da_coluna_para_x",
+    "eixo_y": "nome_da_coluna_para_y",
+    "justificativa": "uma frase curta explicando a escolha"
+}}
+"""),
+    ("human", """Aqui estão os dados da consulta original:
+Pergunta do Usuário: {pergunta}
+Colunas Disponíveis: {colunas}
+Amostra dos Dados:
+{dados_crus}
+
+Gere o JSON de configuração do gráfico.""")
 ])
