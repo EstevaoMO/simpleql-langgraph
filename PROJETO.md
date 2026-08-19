@@ -9,6 +9,7 @@ Este documento descreve a arquitetura, os componentes, as dependências e as dec
 
 ## Arquitetura
 - Orquestração baseada em grafo: o fluxo de análise é modelado por um grafo de estados (`src/grafo.py`) usando `langgraph`. Cada nó do grafo é uma função que recebe e retorna partes do `EstadoAnalise`.
+- Extração de entidades: extrai da pergunta do usuário com fuzzy match & interpretação de LLMs as melhores correspondências de entidades no banco (ex.: x360 ≈ Xbox360).
 - Geração de SQL: um modelo especializado (instanciado em `src/modelos.py`) recebe um prompt (`src/prompts.py`) e retorna apenas uma string SQL.
 - Validação: o nó de validação (`src/nos.py`) rejeita consultas que contenham comandos destrutivos (DROP, DELETE, UPDATE, INSERT, ALTER, TRUNCATE, CREATE TABLE).
 - Execução: as queries válidas são executadas em DuckDB contra um CSV local (`db/vgsales.csv`) montado como view em memória.
