@@ -4,7 +4,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.estado import EstadoAnalise
-from src.nos import gerar_consulta_sql, validar_consulta_sql, executar_consulta_sql
+from src.nos import alinhar_entidades, gerar_consulta_sql, validar_consulta_sql, executar_consulta_sql
 
 def testar_fluxo_ate_banco() -> None:
     """
@@ -21,9 +21,12 @@ def testar_fluxo_ate_banco() -> None:
         "resposta_final": "",
         "erro": None
     }
-    
+
+    atualizacao_alinhamento = alinhar_entidades(estado_simulado)
+    estado_simulado.update(atualizacao_alinhamento)
+
     atualizacao_geracao = gerar_consulta_sql(estado_simulado)
-    estado_simulado.update(atualizacao_geracao) # Mmscla o resultado na prancheta
+    estado_simulado.update(atualizacao_geracao) # mmscla o resultado na prancheta
     
     atualizacao_validacao = validar_consulta_sql(estado_simulado)
     estado_simulado.update(atualizacao_validacao)
