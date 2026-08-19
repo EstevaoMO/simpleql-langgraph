@@ -9,49 +9,44 @@ from src.nos import (
     gerar_consulta_sql, 
     validar_consulta_sql, 
     executar_consulta_sql, 
+    planejar_grafico,
     gerar_resposta_final
 )
 
 def testar_fluxo_completo() -> None:
-    """
-    Testa todo o pipeline linearmente: alinhamento semântico, extração da intenção, 
-    geração do SQL, validação, execução no DuckDB e interpretação final.
-    """
-    print("🚀 Iniciando Teste do Fluxo Completo do SimplesQL...\n")
+    print("🚀 Iniciando Teste do Fluxo Completo (com DataViz)...\n")
     
     estado_simulado: EstadoAnalise = {
-        "pergunta": "Qual vendeu mais, gta 5 ou red dead?",
+        "pergunta": "Compare as vendas globais do Wii Sports e do Tetris", 
         "dicas_entidades": "",
         "consulta_sql": "",
         "sql_valido": False,
         "resultado_consulta": [],
+        "dados_encontrados": True,
         "resposta_final": "",
         "erro": None,
         "tentativas_correcao": 0,
-        "dados_encontrados": True
+        "config_grafico": None 
     }
     
-    print(f"👤 Pergunta do Usuário: '{estado_simulado['pergunta']}'\n")
-    print("-" * 50)
+    print(f"👤 Pergunta: '{estado_simulado['pergunta']}'\n" + "-" * 50)
     
-    atualizacao_alinhamento = alinhar_entidades(estado_simulado)
-    estado_simulado.update(atualizacao_alinhamento)
-    print(f"    [Estado Atualizado] Dicas geradas: \n{estado_simulado['dicas_entidades']}\n")
+    estado_simulado.update(alinhar_entidades(estado_simulado))
+    estado_simulado.update(gerar_consulta_sql(estado_simulado))
+    estado_simulado.update(validar_consulta_sql(estado_simulado))
     
-    atualizacao_geracao = gerar_consulta_sql(estado_simulado)
-    estado_simulado.update(atualizacao_geracao) 
+    if not estado_simulado.get("sql_valido"):
+        print(f"\n🚨 FLUXO ABORTADO: {estado_simulado.get('erro')}")
+        return
+        
+    estado_simulado.update(executar_consulta_sql(estado_simulado))
+    estado_simulado.update(planejar_grafico(estado_simulado))
+    estado_simulado.update(gerar_resposta_final(estado_simulado))
     
-    atualizacao_validacao = validar_consulta_sql(estado_simulado)
-    estado_simulado.update(atualizacao_validacao)
-    
-    atualizacao_execucao = executar_consulta_sql(estado_simulado)
-    estado_simulado.update(atualizacao_execucao)
-    
-    atualizacao_analise = gerar_resposta_final(estado_simulado)
-    estado_simulado.update(atualizacao_analise)
-    
-    print("\n================ RELATÓRIO FINAL GERADO ================\n")
+    print("\n================ RELATÓRIO FINAL ================\n")
     print(estado_simulado["resposta_final"])
+    print("\n================ CONFIGURAÇÃO DO GRÁFICO ================\n")
+    print(estado_simulado.get("config_grafico"))
     print("\n========================================================")
 
 if __name__ == "__main__":
