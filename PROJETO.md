@@ -1,7 +1,7 @@
 ## PROJETO: Detalhes Técnicos
 
 <p align="center">
-	<img src="logo.png" alt="SimplesQL logo" width="420" />
+	<img src="logo-bg.png" alt="SimplesQL logo" width="420" />
 </p>
 
 ## Visão geral

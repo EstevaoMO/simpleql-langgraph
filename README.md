@@ -1,7 +1,7 @@
 # SimplesQL: Assistente SQL com LangGraph
 
 <p align="center">
-	<img src="logo.png" alt="SimplesQL logo" width="420" />
+	<img src="logo-bg.png" alt="SimplesQL logo" width="420" />
 </p>
 
 Uma ferramenta minimalista que traduz linguagem natural em consultas SQL seguras, executa-as sobre um dataset CSV com DuckDB e gera um relatório interpretável e auditável usando modelos de linguagem.
