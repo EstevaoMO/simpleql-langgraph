@@ -6,6 +6,9 @@
 
 Uma ferramenta minimalista que traduz linguagem natural em consultas SQL seguras, executa-as sobre um dataset CSV com DuckDB e gera um relatório interpretável e auditável usando modelos de linguagem.
 
+## Demo
+Acesse o projeto em: [https://simpleql.streamlit.app/](https://simpleql.streamlit.app/)
+
 ## Objetivo do projeto
 - Provar um fluxo prático e auditável que combina geração de SQL por LLMs, validação de segurança e execução em DuckDB.
 - Demonstrar orquestração baseada em grafos de estado (LangGraph) para pipelines de análise de dados.
