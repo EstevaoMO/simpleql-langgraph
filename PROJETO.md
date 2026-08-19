@@ -15,41 +15,54 @@ Este documento descreve a arquitetura, os componentes, as dependências e as dec
 - Execução: as queries válidas são executadas em DuckDB contra um CSV local (`db/vgsales.csv`) montado como view em memória.
 - Interpretação: um modelo analista interpreta o resultado e gera um relatório formatado e auditável.
 
-## Principais módulos
-- `src/grafo.py`: monta e compila o `StateGraph`, define rotas condicionais e cria a instância do agente.
-- `src/nos.py`: implementa os nós do pipeline — gerar SQL, validar, executar no DuckDB e gerar a resposta final.
-- `src/modelos.py`: carregamento das credenciais (`dotenv`) e construção de instâncias `ChatOpenAI` para os papéis de `modelo_sql` e `modelo_analista`.
-- `src/prompts.py`: contém `ChatPromptTemplate` com instruções rígidas para geração de SQL e interpretação de dados.
-- `src/estado.py`: definição de `EstadoAnalise` (TypedDict) que padroniza o estado trocado entre os nós.
 
-## Exigências e variáveis de ambiente
-- Python 3.10+ recomendado.
-- Variáveis:
-  - `OPENROUTER_API_KEY`: chave usada pelos adaptadores `langchain_openai` (definida por `dotenv` ou variáveis de ambiente).
-
-## Como rodar localmente
-1. Crie e ative um virtualenv.
-2. Instale as dependências mínimas:
+```mermaid
+graph TD
+    A[estado: pergunta] --> B(alinhar_entidades)
+    B --> C(gerar_sql)
+    C --> D(validar_sql)
+    D -- SQL Seguro --> E(executar_sql)
+    D -- SQL Malicioso --> F(gerar_resposta)
+    E -- Erro de Sintaxe --> C
+    E -- Sucesso --> F
+    F --> G[Relatório Final]
 
 ```
-pip install -r requirements.txt
-```
 
-3. Defina a variável de ambiente `OPENROUTER_API_KEY` (ou crie um `.env`).
-4. Rode os scripts de teste/simulação em `testes/`:
+## Lógica dos nós
 
-```
-python testes/teste_fluxo_completo.py
-```
+A robustez da extração de dados ocorre através da divisão de responsabilidades entre o banco de dados e as chamadas de API:
 
-## Observações de segurança e auditoria
-- O projeto já implementa uma camada de validação simples contra comandos destrutivos. Em produção, recomendo:
-  - Lista branca de colunas/alias aceitos.
-  - Timeouts/limites de resultados do DuckDB.
-  - Logs estruturados de cada passo (entrada do LLM, SQL gerado, output do DB, relatório final).
+* **alinhar_entidades (Nó 0):** Resolve a ponte entre linguagem natural e o esquema do banco. Utiliza um LLM para expandir siglas famosas (ex: "GTA" para "Grand Theft Auto") e calcula a similaridade no DuckDB usando uma equação híbrida de contenção (`ILIKE`) e distância léxica (*Jaro-Winkler*), injetando o nome exato no estado.
+* **gerar_sql (Nó 1):** Consome a intenção alinhada e traduz estritamente para sintaxe SQL de leitura.
+* **validar_sql e executar_sql (Nós 2 e 3):** Atuam como cães de guarda. A validação bloqueia injeções destrutivas, e a execução roda a query válida no CSV local (`db/vgsales.csv`) mapeado em memória.
+* **gerar_resposta (Nó 4):** Traduz os arrays numéricos brutos para um relatório auditável em formatação Markdown.
+
+## Estratégia e seleção de modelos
+
+Em vez de depender de um único modelo genérico, fragmentamos as tarefas cognitivas para otimizar precisão e custo no pipeline:
+
+* **Modelo Extrator/Analista (cohere/north-mini-code:free):** Focado em linguagem natural para lidar com a expansão de siglas e a redação final. No Nó 0, a temperatura é cravada em 0 para induzir um comportamento determinístico de extração de dados (Named Entity Recognition).
+* **Modelo SQL (openai/gpt-oss-20b:free):** Focado puramente em estruturar consultas eficientes, recebendo os enums de baixa cardinalidade diretamente via injeção de prompt.
+
+## Execução do projeto
+
+Para levantar o ambiente de análise dinâmico e testar as interações, siga os comandos abaixo após clonar o repositório:
+
+* Instale as dependências vitais executando `pip install -r requirements.txt`.
+
+
+* Configure a variável de ambiente `OPENROUTER_API_KEY` com sua credencial ativa.
+
+
+* Inicie o servidor de interface web rodando `streamlit run app.py` diretamente no terminal.
 
 ## Testes
-- Há scripts de teste em `testes/` que simulam o fluxo e validam a integração entre módulos. Eles são executáveis como scripts independentes (não dependem de `pytest`, mas podem ser adaptados para ele).
+
+* Há scripts de teste em testes/ que simulam o fluxo e validam a integração entre módulos. Eles são executáveis como scripts independentes (não dependem de pytest, mas podem ser adaptados para ele).
 
 ## Contato e contribuição
-- Abra issues para discutir mudanças e PRs para enviar contribuições. Siga o estilo e a estrutura já existente em `src/`.
+
+* Abra issues para discutir mudanças e PRs para enviar contribuições. Siga o estilo e a estrutura já existente em src/.
+
+```

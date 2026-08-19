@@ -35,14 +35,20 @@ def alinhar_entidades(estado: EstadoAnalise) -> dict:
         
         for termo in termos:
             query_similaridade = f"""
-                SELECT Name AS correspondencia, jaro_winkler_similarity(Name, '{termo}') AS score, 'Nome do Jogo' as tipo
+                SELECT Name AS correspondencia, 
+                       (CASE WHEN Name ILIKE '%{termo}%' THEN 1.0 ELSE 0.0 END) + 
+                       (jaro_winkler_similarity(Name, '{termo}') * 0.5) AS score, 
+                       'Nome do Jogo' as tipo
                 FROM vgsales
                 UNION ALL
-                SELECT Publisher AS correspondencia, jaro_winkler_similarity(Publisher, '{termo}') AS score, 'Publicadora' as tipo
+                SELECT Publisher AS correspondencia, 
+                       (CASE WHEN Publisher ILIKE '%{termo}%' THEN 1.0 ELSE 0.0 END) + 
+                       (jaro_winkler_similarity(Publisher, '{termo}') * 0.5) AS score, 
+                       'Publicadora' as tipo
                 FROM vgsales
                 ORDER BY score DESC
                 LIMIT 1
-            """
+                """
             resultado = conn.execute(query_similaridade).fetchone()
             
             if resultado and resultado[1] > 0.6: # intervalo de corte

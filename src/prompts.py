@@ -2,9 +2,11 @@ from langchain_core.prompts import ChatPromptTemplate
 
 PROMPT_EXTRAIR_ENTIDADES = ChatPromptTemplate.from_messages([
     ("system", """Você é um extrator de entidades.
-Sua única função é identificar possíveis nomes de jogos, publicadoras ou plataformas na pergunta do usuário.
+Sua única função é identificar possíveis nomes de jogos, publicadoras ou plataformas. 
+REGRA VITAL: Se encontrar siglas ou abreviações famosas de jogos (ex: GTA, COD, WOW), expanda-as para o nome completo (ex: Grand Theft Auto, Call of Duty).
+
 Retorne APENAS uma lista separada por vírgulas. Se não houver, retorne vazio.
-Exemplo 1: "Qual vendeu mais, gta 5 ou red dead?" -> gta 5, red dead
+Exemplo 1: "Qual vendeu mais, cod2 ou minecraft?" -> Call of Duty 2, Minecraft 
 Exemplo 2: "Quantos jogos a nintendo lançou?" -> nintendo
 Exemplo 3: "Qual a média de vendas globais?" -> """),
     ("human", "{pergunta}")
