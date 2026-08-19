@@ -95,11 +95,12 @@ st.markdown(f"""
 
 # Dicionários e Funções Auxiliares
 MENSAGENS_POR_NO = {
-    "gerar_sql": "🧠 Interpretando sua pergunta e planejando a consulta SQL...",
-    "validar_sql": "🔍 Validando a sintaxe da query gerada...",
-    "executar_sql": "⚙️ Executando a consulta no banco de dados...",
-    "corrigir_sql": "🛠️ Ajustando a query após um erro de execução...",
-    "gerar_resposta": "✍️ Elaborando o relatório final com os resultados...",
+    "alinhar_entidades": "Identificando entidades e termos relevantes na pergunta...",
+    "gerar_sql": "Interpretando sua pergunta e planejando a consulta SQL...",
+    "validar_sql": "Validando a sintaxe da query gerada...",
+    "executar_sql": "Executando a consulta no banco de dados...",
+    "corrigir_sql": "Ajustando a query após um erro de execução...",
+    "gerar_resposta": "Elaborando o relatório final com os resultados...",
 }
 
 MENSAGEM_PADRAO_SEQUENCIA = [
@@ -210,6 +211,7 @@ def renderizar_inicio():
         if pergunta.strip():
             estado_inicial = {
                 "pergunta": pergunta,
+                "dicas_entidades": "",
                 "consulta_sql": "",
                 "sql_valido": False,
                 "resultado_consulta": [],

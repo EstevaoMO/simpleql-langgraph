@@ -1,5 +1,15 @@
 from langchain_core.prompts import ChatPromptTemplate
 
+PROMPT_EXTRAIR_ENTIDADES = ChatPromptTemplate.from_messages([
+    ("system", """Você é um extrator de entidades.
+Sua única função é identificar possíveis nomes de jogos, publicadoras ou plataformas na pergunta do usuário.
+Retorne APENAS uma lista separada por vírgulas. Se não houver, retorne vazio.
+Exemplo 1: "Qual vendeu mais, gta 5 ou red dead?" -> gta 5, red dead
+Exemplo 2: "Quantos jogos a nintendo lançou?" -> nintendo
+Exemplo 3: "Qual a média de vendas globais?" -> """),
+    ("human", "{pergunta}")
+])
+
 PROMPT_GERACAO_SQL = ChatPromptTemplate.from_messages([
     ("system", """Você é um Engenheiro de Dados especialista em DuckDB.
 Sua única função é traduzir perguntas analíticas em queries SQL precisas.
@@ -8,9 +18,9 @@ Tabela disponível: vgsales
 Schema:
 - Rank (INTEGER): Ranking global de vendas
 - Name (VARCHAR): Nome do jogo
-- Platform (VARCHAR): Plataforma (ex: PS4, Wii, PC)
+- Platform (VARCHAR): Valores aceitos: '2600', '3DO', '3DS', 'DC', 'DS', 'GB', 'GBA', 'GC', 'GEN', 'GG', 'N64', 'NES', 'NG', 'PC', 'PCFX', 'PS', 'PS2', 'PS3', 'PS4', 'PSP', 'PSV', 'SAT', 'SCD', 'SNES', 'TG16', 'WS', 'Wii', 'WiiU', 'X360', 'XB', 'XOne'
 - Year (INTEGER): Ano de lançamento
-- Genre (VARCHAR): Gênero (ex: Action, Sports, RPG)
+- Genre (VARCHAR): Valores aceitos: 'Action', 'Adventure', 'Fighting', 'Misc', 'Platform', 'Puzzle', 'Racing', 'Role-Playing', 'Shooter', 'Simulation', 'Sports', 'Strategy'
 - Publisher (VARCHAR): Empresa publicadora (ex: Nintendo, EA)
 - NA_Sales (DOUBLE): Vendas na América do Norte (em milhões)
 - EU_Sales (DOUBLE): Vendas na Europa (em milhões)
@@ -19,13 +29,14 @@ Schema:
 - Global_Sales (DOUBLE): Vendas globais totais (em milhões)
 
 Regras OBRIGATÓRIAS:
-1. Retorne APENAS a consulta SQL limpa.
-2. NUNCA envolva a resposta em blocos de markdown (como ```sql ... ```).
-3. Utilize apenas comandos de leitura (SELECT). Não use DROP, INSERT, UPDATE, DELETE.
-4. Utilize a tabela com o nome exato 'vgsales'.
-5. Sempre garanta que os nomes das colunas correspondam exatamente ao schema fornecido.
-6. Se a pergunta for mais interpretativa (comparativas entre gêneros, regiões etc.), retorne a query que agregue um maior conjunto de dados de forma adequada.
-7. Trunque médias, floats e totais para 2 casas decimais, utilizando funções SQL apropriadas (ex: ROUND())."""),
+1. Retorne APENAS a consulta SQL limpa, sem blocos de markdown.
+2. Utilize apenas comandos de leitura (SELECT). Não use DROP, INSERT, UPDATE, DELETE.
+3. Utilize a tabela com o nome exato 'vgsales'.
+4. Sempre garanta que os nomes das colunas e strings de filtro correspondam exatamente ao schema.
+
+Aqui estão os nomes exatos encontrados no banco de dados que correspondem aos termos da pergunta. 
+UTILIZE ESTES NOMES EXATOS nas cláusulas WHERE ou ILIKE:
+{dicas}"""),
     ("human", """Pergunta do usuário: {pergunta}
 
 {instrucao_correcao}""")

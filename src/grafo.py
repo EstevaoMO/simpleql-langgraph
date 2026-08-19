@@ -1,6 +1,7 @@
 from langgraph.graph import StateGraph, END
 from src.estado import EstadoAnalise
 from src.nos import (
+    alinhar_entidades,
     gerar_consulta_sql,
     validar_consulta_sql,
     executar_consulta_sql,
@@ -39,14 +40,16 @@ def compilar_grafo():
     Monta a estrutura do agente, definindo os nós e os caminhos (arestas).
     """
     workflow = StateGraph(EstadoAnalise)
-    
+
+    workflow.add_node("alinhar_entidades", alinhar_entidades)
     workflow.add_node("gerar_sql", gerar_consulta_sql)
     workflow.add_node("validar_sql", validar_consulta_sql)
     workflow.add_node("executar_sql", executar_consulta_sql)
     workflow.add_node("gerar_resposta", gerar_resposta_final)
 
-    workflow.set_entry_point("gerar_sql")
-    
+    workflow.set_entry_point("alinhar_entidades")
+
+    workflow.add_edge("alinhar_entidades", "gerar_sql")
     workflow.add_edge("gerar_sql", "validar_sql")
     workflow.add_edge("gerar_resposta", END)
 

@@ -6,6 +6,7 @@ class EstadoAnalise(TypedDict):
     Cada nó receberá esse estado e retornará um dicionário apenas com as chaves que deseja atualizar.
     """
     pergunta: str                 # A pergunta original do usuário em linguagem natural
+    dicas_entidades: str          # Armazena os nomes exatos encontrados no banco
     consulta_sql: str             # O código SQL gerado pelo LLM especialista em código
     sql_valido: bool              # Flag de segurança indicando se a query passou nas validações
     resultado_consulta: List[Dict]# Os dados retornados pelo DuckDB
