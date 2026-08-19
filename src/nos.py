@@ -1,5 +1,6 @@
 import re
 import duckdb
+import textwrap
 from langchain_core.output_parsers import StrOutputParser
 
 from src.modelos import instanciar_modelo_sql, instanciar_modelo_analista
@@ -175,6 +176,13 @@ def gerar_resposta_final(estado: EstadoAnalise) -> dict:
         relatorio_erro = f"**Não foi possível concluir a análise.**\n\nMotivo: {erro}"
         return {"resposta_final": relatorio_erro}
 
+    if not dados_crus:
+        return {
+            "dados_encontrados": False,
+            "resposta_final": "A consulta foi executada com sucesso, mas nenhum registro correspondente foi encontrado na base de dados com os filtros aplicados."
+        }
+    
+
     modelo_analista = instanciar_modelo_analista()
     
     # Cadeia LCEL para a análise
@@ -184,21 +192,32 @@ def gerar_resposta_final(estado: EstadoAnalise) -> dict:
         "pergunta": pergunta,
         "dados": str(dados_crus)
     })
-        
-    relatorio_final = f"""### 📊 Análise
-        {texto_interpretacao}
 
-        ---
-        ### 🔎 Evidências e Transparência
+    # templates evitam inconsistêNcias na formatação
+    template_relatorio = textwrap.dedent("""
+    ### 📊 Análise
+    {analise}
 
-        **SQL Utilizado:**
-        ```sql
-        {sql_utilizado}
-        ```
+    ---
+    ### 🔎 Evidências e Transparência
 
-        **Amostra dos Dados Utilizados:**
-        {dados_crus[:5]}
-        """
+    **SQL Utilizado:**
+    ```sql
+    {sql}
+    ```
+
+    **Amostra dos Dados Utilizados:**
+    ```python
+    {dados}
+    ```
+    """).strip()
+    
+
+    relatorio_final = template_relatorio.format(
+        analise=texto_interpretacao.strip(),
+        sql=sql_utilizado.strip(),
+        dados=dados_crus[:5]
+    )
 
     print("✅ Relatório final gerado com sucesso.")
     return {"resposta_final": relatorio_final}

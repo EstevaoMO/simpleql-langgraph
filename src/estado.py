@@ -13,3 +13,4 @@ class EstadoAnalise(TypedDict):
     resposta_final: str           # O relatório final gerado pelo LLM analista
     erro: Optional[str]           # Mensagem de erro (útil para o modelo tentar corrigir a query)
     tentativas_correcao: int      # Número de tentativas de corrigir a query antes de desistir (máx. 2)
+    dados_encontrados: bool       # Flag indicando se algum dado foi encontrado na consulta (tratamento de saída)

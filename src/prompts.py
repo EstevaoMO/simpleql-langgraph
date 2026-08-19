@@ -3,7 +3,7 @@ from langchain_core.prompts import ChatPromptTemplate
 PROMPT_EXTRAIR_ENTIDADES = ChatPromptTemplate.from_messages([
     ("system", """Você é um extrator de entidades.
 Sua única função é identificar possíveis nomes de jogos, publicadoras ou plataformas. 
-REGRA VITAL: Se encontrar siglas ou abreviações famosas de jogos (ex: GTA, COD, WOW), expanda-as para o nome completo (ex: Grand Theft Auto, Call of Duty).
+REGRA VITAL: Se encontrar siglas ou abreviações famosas de jogos (ex: GTA, COD, WOW), expanda-as para o nome completo (ex: Grand Theft Auto, Call of Duty, World of Warcraft).
 
 Retorne APENAS uma lista separada por vírgulas. Se não houver, retorne vazio.
 Exemplo 1: "Qual vendeu mais, cod2 ou minecraft?" -> Call of Duty 2, Minecraft 

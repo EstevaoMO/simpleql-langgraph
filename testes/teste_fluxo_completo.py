@@ -27,7 +27,8 @@ def testar_fluxo_completo() -> None:
         "resultado_consulta": [],
         "resposta_final": "",
         "erro": None,
-        "tentativas_correcao": 0
+        "tentativas_correcao": 0,
+        "dados_encontrados": True
     }
     
     print(f"👤 Pergunta do Usuário: '{estado_simulado['pergunta']}'\n")

@@ -19,7 +19,10 @@ def testar_fluxo_ate_banco() -> None:
         "sql_valido": False,
         "resultado_consulta": [],
         "resposta_final": "",
-        "erro": None
+        "erro": None,
+        "tentativas_correcao": 0,
+        "dicas_entidades": "",
+        "dados_encontrados": True
     }
 
     atualizacao_alinhamento = alinhar_entidades(estado_simulado)

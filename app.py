@@ -110,23 +110,23 @@ MENSAGEM_PADRAO_SEQUENCIA = [
     "✍️ Elaborando o relatório final...",
 ]
 
-def formatar_amostras_de_dados(texto: str) -> str:
-    """Garante que listas de dicionários sejam renderizadas como blocos JSON."""
-    if not texto: return texto
-    linhas = texto.split("\n")
-    saida = []
-    padrao = re.compile(r"^\[\s*\{.*\}\s*\]$")
+# def formatar_amostras_de_dados(texto: str) -> str:
+#     """Garante que listas de dicionários sejam renderizadas como blocos JSON."""
+#     if not texto: return texto
+#     linhas = texto.split("\n")
+#     saida = []
+#     padrao = re.compile(r"^\[\s*\{.*\}\s*\]$")
 
-    for linha in linhas:
-        if padrao.match(linha.strip()):
-            try:
-                dados = ast.literal_eval(linha.strip())
-                saida.append("```json\n" + json.dumps(dados, indent=2, ensure_ascii=False, default=str) + "\n```")
-                continue
-            except:
-                pass
-        saida.append(linha)
-    return "\n".join(saida)
+#     for linha in linhas:
+#         if padrao.match(linha.strip()):
+#             try:
+#                 dados = ast.literal_eval(linha.strip())
+#                 saida.append("```json\n" + json.dumps(dados, indent=2, ensure_ascii=False, default=str) + "\n```")
+#                 continue
+#             except:
+#                 pass
+#         saida.append(linha)
+#     return "\n".join(saida)
 
  
 def limpar_indentacao_markdown(texto: str) -> str:
@@ -217,19 +217,26 @@ def renderizar_inicio():
                 "resultado_consulta": [],
                 "resposta_final": "",
                 "erro": None,
-                "tentativas_correcao": 0
+                "tentativas_correcao": 0,
+                "dados_encontrados": True
             }
             try:
                 resultado = executar_agente_com_status(estado_inicial)
-                st.markdown('<div class="simplesql-resposta">', unsafe_allow_html=True)
-                resposta_formatada = formatar_amostras_de_dados(resultado.get("resposta_final", ""))
-                resposta_formatada = limpar_indentacao_markdown(resposta_formatada)
-                st.markdown(resposta_formatada)
-                st.markdown('</div>', unsafe_allow_html=True)
-            except Exception as e:
-                st.error(f"Erro na execução do agente: {str(e)}")
-        else:
-            st.warning("Insira uma pergunta para continuar.")
+                
+                if resultado.get("dados_encontrados", True):
+                    st.markdown('<div class="simplesql-resposta">', unsafe_allow_html=True)
+                    st.markdown(resultado.get("resposta_final", ""))
+                    st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.info("**Nenhum dado encontrado**", icon="ℹ️")
+                    st.markdown(f"> {resultado.get('resposta_final', '')}")
+                    
+            except Exception as e: # caso crítico
+                st.error("Tente novamente, não foi possível processar sua query :/", icon="🚨")
+                st.markdown(f"""
+                        ```bash
+                        [ERRO DE EXECUÇÃO]
+                        {str(e)}""")
 
 def renderizar_base():
     st.markdown("""
