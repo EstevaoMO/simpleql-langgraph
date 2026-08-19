@@ -113,6 +113,10 @@ def validar_consulta_sql(estado: EstadoAnalise) -> dict:
     print("[Nó: Validação de SQL] Verificando segurança da query...")
     
     consulta = estado.get("consulta_sql", "").upper()
+
+    if not consulta:
+        print("    ⚠️ Consulta SQL vazia. Marcação como inválida.")
+        return {"sql_valido": False, "erro": "A partir da pergunta, não foi possível gerar uma consulta SQL válida. Veja se os dados solicitados podem ser encontdados no banco de dados e tente novamente :/"}
     
     # Lista de palavras-chave proibidas que alteram o banco de dados
     comandos_proibidos = ["DROP", "DELETE", "UPDATE", "INSERT", "ALTER", "TRUNCATE", "CREATE TABLE"]
@@ -138,7 +142,7 @@ def executar_consulta_sql(estado: EstadoAnalise) -> dict:
     if not estado.get("sql_valido"):
         print("    ⚠️ Execução abortada devido a SQL inválido.")
         return {"resultado_consulta": []}
-        
+            
     consulta = estado["consulta_sql"]
     
     try:
