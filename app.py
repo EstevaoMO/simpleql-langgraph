@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 import time
-from src.grafo import agente_simplesql
 
 st.set_page_config(
     page_title="SimplesQL",
@@ -10,21 +9,34 @@ st.set_page_config(
     layout="wide"
 )
 
+@st.cache_resource(show_spinner="Carregando motor de inteligência...")
+def instanciar_agente():
+    """
+    Importa e compila o grafo apenas uma vez. 
+    Protege contra recompilações a cada refresh de tela.
+    """
+    from src.grafo import agente_simplesql
+    return agente_simplesql
+
+agente_simplesql = instanciar_agente()
+
+
+@st.cache_data(show_spinner="Carregando base de dados...")
+def carregar_dados_brutos(caminho: str) -> pd.DataFrame:
+    """
+    Lê o CSV do disco apenas na primeira vez que a aba é acessada.
+    """
+    return pd.read_csv(caminho)
+
+
 # css
 PRIMARY = "#4169E1"
 PRIMARY_DARK = "#2F4FBF"
 
 st.markdown(f"""
     <style>
-    /* Ocultar barra superior, menu e rodapé */
     #MainMenu, footer, header {{visibility: hidden;}}
-
-    /* Fundo da aplicação */
-    .stApp {{
-        background-color: #FAFBFF;
-    }}
-
-    /* ---------- Hero Block ---------- */
+    .stApp {{ background-color: #FAFBFF; }}
     .simplesql-hero {{
         background: linear-gradient(135deg, {PRIMARY} 0%, {PRIMARY_DARK} 100%);
         padding: 28px 32px;
@@ -32,16 +44,8 @@ st.markdown(f"""
         margin-bottom: 24px;
         box-shadow: 0 8px 24px rgba(65, 105, 225, 0.25);
     }}
-    .simplesql-hero h1, .simplesql-hero p {{
-        color: #FFFFFF !important;
-        margin: 0;
-    }}
-    .simplesql-hero h1 {{
-        font-weight: 800 !important;
-        margin-bottom: 6px;
-    }}
-
-    /* ---------- Response Card ---------- */
+    .simplesql-hero h1, .simplesql-hero p {{ color: #FFFFFF !important; margin: 0; }}
+    .simplesql-hero h1 {{ font-weight: 800 !important; margin-bottom: 6px; }}
     .simplesql-resposta {{
         background: #FFFFFF;
         border: 1px solid #E7E9F5;
@@ -52,8 +56,6 @@ st.markdown(f"""
         box-shadow: 0 2px 10px rgba(20, 20, 50, 0.05);
         color: #1A1D29;
     }}
-
-    /* ---------- Botões ---------- */
     .stButton>button {{
         border: 1.5px solid {PRIMARY} !important;
         border-radius: 10px !important;
@@ -61,24 +63,10 @@ st.markdown(f"""
         background-color: #FFFFFF !important;
         transition: all 0.15s ease-in-out;
     }}
-    .stButton>button:hover {{
-        background-color: {PRIMARY} !important;
-        color: #FFFFFF !important;
-    }}
-    .stButton>button[kind="primary"] {{
-        background-color: {PRIMARY} !important;
-        color: #FFFFFF !important;
-        border: none !important;
-    }}
-    .stButton>button[kind="primary"]:hover {{
-        background-color: {PRIMARY_DARK} !important;
-    }}
-
-    /* ---------- Spinner / Status ---------- */
-    div.stSpinner > div > div {{
-        border-top-color: {PRIMARY} !important;
-    }}
-    
+    .stButton>button:hover {{ background-color: {PRIMARY} !important; color: #FFFFFF !important; }}
+    .stButton>button[kind="primary"] {{ background-color: {PRIMARY} !important; color: #FFFFFF !important; border: none !important; }}
+    .stButton>button[kind="primary"]:hover {{ background-color: {PRIMARY_DARK} !important; }}
+    div.stSpinner > div > div {{ border-top-color: {PRIMARY} !important; }}
     .simplesql-label {{
         font-size: 0.8rem;
         font-weight: 700;
@@ -109,19 +97,15 @@ MENSAGEM_PADRAO_SEQUENCIA = [
     "✍️ Elaborando o relatório final...",
 ]
 
-# FUnções para os gráficos e exibição de dados
 def renderizar_grafico_unico(config: dict, df: pd.DataFrame) -> None:
-    """Renderiza um único gráfico com base no dicionário de configuração, isolando os erros."""
     tipo = config.get("tipo")
     x = config.get("eixo_x")
     y = config.get("eixo_y")
-    justificativa = config.get("justificativa")
 
     if not (tipo and x and y):
         return
 
     with st.container():
-        # st.caption(f"**Insight Visual:** {justificativa}")
         try:
             if tipo == "bar":
                 st.bar_chart(df, x=x, y=y)
@@ -131,11 +115,9 @@ def renderizar_grafico_unico(config: dict, df: pd.DataFrame) -> None:
                 st.scatter_chart(df, x=x, y=y)
         except Exception as erro:
             st.warning(f"Não foi possível renderizar o gráfico '{tipo}': {erro}")
-    
     st.divider()
 
 def exibir_visualizacoes(configs_graficos: list, dados_crus: list) -> None:
-    """Gerencia a criação do DataFrame e itera sobre a lista de gráficos solicitados."""
     if not configs_graficos or not dados_crus:
         return
 
@@ -145,12 +127,12 @@ def exibir_visualizacoes(configs_graficos: list, dados_crus: list) -> None:
     for config in configs_graficos:
         renderizar_grafico_unico(config, df_plot)
 
-# Funções de executção
 def executar_agente_com_status(estado_inicial):
-    """Executa o grafo do agente exibindo o progresso em tempo real."""
     resultado_final = None
+    usa_stream = hasattr(agente_simplesql, "stream")
+    
     with st.status("Iniciando análise...", expanded=True) as status:
-        try:
+        if usa_stream:
             for evento in agente_simplesql.stream(estado_inicial, {"recursion_limit": 10}):
                 for nome_no, valor_no in evento.items():
                     mensagem = MENSAGENS_POR_NO.get(nome_no, f"⚙️ Processando: {nome_no}...")
@@ -159,16 +141,14 @@ def executar_agente_com_status(estado_inicial):
                         resultado_final = valor_no if resultado_final is None else {**resultado_final, **valor_no}
                     else:
                         resultado_final = valor_no
-            status.update(label="Análise concluída!", state="complete")
-        except AttributeError:
+        else:
             for msg in MENSAGEM_PADRAO_SEQUENCIA:
                 status.update(label=msg, state="running")
-                time.sleep(0.5)
             resultado_final = agente_simplesql.invoke(estado_inicial, {"recursion_limit": 10})
-            status.update(label="Análise concluída!", state="complete")
+        
+        status.update(label="Análise concluída!", state="complete")
     return resultado_final
 
-# Funções de rendereização das páginas
 def renderizar_inicio():
     st.markdown("""
         <div class="simplesql-hero">
@@ -214,7 +194,6 @@ def renderizar_inicio():
                     with st.container(border=True):
                         st.markdown(texto_relatorio)
                         
-                    # gráficos
                     configs = resultado.get("config_grafico", [])
                     dados = resultado.get("resultado_consulta", [])
                     
@@ -223,7 +202,7 @@ def renderizar_inicio():
                     st.info("**Nenhum dado encontrado**", icon="ℹ️")
                     st.markdown(f"> {resultado.get('resposta_final', '')}")
                     
-            except Exception as e: # caso crítico
+            except Exception as e:
                 st.error("Tente novamente, não foi possível processar sua query :/", icon="🚨")
                 st.markdown(f"""
                         ```bash
@@ -240,7 +219,9 @@ def renderizar_base():
 
     caminho_csv = "db/vgsales.csv"
     if os.path.exists(caminho_csv):
-        df = pd.read_csv(caminho_csv)
+        # Utiliza a função otimizada com cache para leitura do disco
+        df = carregar_dados_brutos(caminho_csv)
+        
         c1, c2, c3 = st.columns(3)
         c1.metric("Total de registros", f"{len(df):,}".replace(",", "."))
         if "Platform" in df.columns:
@@ -269,7 +250,6 @@ def main():
         renderizar_inicio()
     elif pagina == "Base de Dados":
         renderizar_base()
-
 
 if __name__ == "__main__":
     main()
