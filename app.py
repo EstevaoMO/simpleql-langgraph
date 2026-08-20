@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import os
-import time
 
 st.set_page_config(
     page_title="SimplesQL",
@@ -219,7 +218,6 @@ def renderizar_base():
 
     caminho_csv = "db/vgsales.csv"
     if os.path.exists(caminho_csv):
-        # Utiliza a função otimizada com cache para leitura do disco
         df = carregar_dados_brutos(caminho_csv)
         
         c1, c2, c3 = st.columns(3)
