@@ -7,7 +7,12 @@
 Uma ferramenta analítica e educacional que traduz linguagem natural em consultas SQL seguras, executa-as sobre um dataset CSV in-memory e gera relatórios com visualizações de dados dinâmicas.
 
 ## Demo
-Acesse o projeto em: [https://simpleql.streamlit.app/](https://simpleql.streamlit.app/)
+<p align="center">
+  <img src="./demo.gif" alt="Demonstração do projeto">
+</p>
+
+Por vezes, os modelos gratuitos ficam um tempo fora do ar; tente novamente mais tarde caso isto ocorra :/
+- Acesse o projeto em: [https://simpleql.streamlit.app/](https://simpleql.streamlit.app/)
 
 ## Objetivo do projeto
 - Provar um fluxo prático e auditável que combina geração de SQL por LLMs e execução in-memory.
