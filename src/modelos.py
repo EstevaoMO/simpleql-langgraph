@@ -31,7 +31,7 @@ def instanciar_modelo_analista(temp: float = 0.2) -> ChatOpenAI:
     A temperatura padrão é 0.2 para garantir certa interpretabilidade.
     """
     modelo_analista: ChatOpenAI = ChatOpenAI(
-        model="openai/gpt-oss-20b:free", #"google/gemma-4-31b-it:free"
+        model="google/gemma-4-31b-it:free", #""
         openai_api_key=CHAVE_API,
         openai_api_base=URL_BASE_OPENROUTER,
         temperature=temp,
